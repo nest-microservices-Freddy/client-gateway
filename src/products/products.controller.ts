@@ -1,16 +1,26 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
+import { PRODUCT_SERVICE } from '../config';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { catchError, firstValueFrom } from 'rxjs';
 
 @Controller('products')
 export class ProductsController {
-  constructor() {}
+  constructor(
+    @Inject(PRODUCT_SERVICE)
+    private readonly productClient: ClientProxy,
+  ) {}
 
   @Post()
   createProduct() {
@@ -18,13 +28,17 @@ export class ProductsController {
   }
 
   @Get()
-  findAllProducts() {
-    return 'Esta funcion regresa varios productos';
+  findAllProducts(@Query() paginationDto: PaginationDto): any {
+    return this.productClient.send({ cmd: 'find_all_products' }, paginationDto);
   }
 
   @Get(':id')
-  findOneProducts(@Param('id') id: string) {
-    return 'Esta funcion regresa un producto' + id;
+  async findOneProduct(@Param('id') id: string) {
+    return this.productClient.send({ cmd: 'find_one_product' }, { id }).pipe(
+      catchError((err) => {
+        throw new RpcException(err);
+      }),
+    );
   }
 
   @Delete(':id')
