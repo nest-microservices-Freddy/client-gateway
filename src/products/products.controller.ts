@@ -10,7 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { PRODUCT_SERVICE } from '../config';
+import { NATS_SERVICE } from '../config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { catchError, firstValueFrom } from 'rxjs';
@@ -20,29 +20,27 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Controller('products')
 export class ProductsController {
   constructor(
-    @Inject(PRODUCT_SERVICE)
-    private readonly productClient: ClientProxy,
+    @Inject(NATS_SERVICE)
+    private readonly client: ClientProxy,
   ) {}
 
   @Post()
   async createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productClient
-      .send({ cmd: 'create_product' }, createProductDto)
-      .pipe(
-        catchError((err) => {
-          throw new RpcException(err);
-        }),
-      );
+    return this.client.send({ cmd: 'create_product' }, createProductDto).pipe(
+      catchError((err) => {
+        throw new RpcException(err);
+      }),
+    );
   }
 
   @Get()
   findAllProducts(@Query() paginationDto: PaginationDto): any {
-    return this.productClient.send({ cmd: 'find_all_products' }, paginationDto);
+    return this.client.send({ cmd: 'find_all_products' }, paginationDto);
   }
 
   @Get(':id')
   async findOneProduct(@Param('id') id: string) {
-    return this.productClient.send({ cmd: 'find_one_product' }, { id }).pipe(
+    return this.client.send({ cmd: 'find_one_product' }, { id }).pipe(
       catchError((err) => {
         throw new RpcException(err);
       }),
@@ -51,7 +49,7 @@ export class ProductsController {
 
   @Delete(':id')
   deleteProducts(@Param('id') id: string) {
-    return this.productClient.send({ cmd: 'delete_product' }, { id }).pipe(
+    return this.client.send({ cmd: 'delete_product' }, { id }).pipe(
       catchError((err) => {
         throw new RpcException(err);
       }),
@@ -60,7 +58,7 @@ export class ProductsController {
 
   @Patch(':id')
   patchProducts(@Param('id') id: string, @Body() body: UpdateProductDto) {
-    return this.productClient.send({ cmd: 'update_product' }, body).pipe(
+    return this.client.send({ cmd: 'update_product' }, body).pipe(
       catchError((err) => {
         throw new RpcException(err);
       }),

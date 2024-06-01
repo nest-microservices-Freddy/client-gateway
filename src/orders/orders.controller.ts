@@ -9,7 +9,7 @@ import {
   Query,
   Patch,
 } from '@nestjs/common';
-import { ORDER_SERVICE } from '../config';
+import { NATS_SERVICE } from '../config';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { CreateOrderDto, OrderPaginationDto, StatusDto } from './dto';
 import { firstValueFrom } from 'rxjs';
@@ -18,26 +18,26 @@ import { PaginationDto } from '../common';
 @Controller('orders')
 export class OrdersController {
   constructor(
-    @Inject(ORDER_SERVICE)
-    private readonly orderClient: ClientProxy,
+    @Inject(NATS_SERVICE)
+    private readonly client: ClientProxy,
   ) {}
 
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderClient.send('createOrder', createOrderDto);
+    return this.client.send('createOrder', createOrderDto);
   }
 
   @Get()
   findAll(@Query() orderPaginationDto: OrderPaginationDto) {
     // return orderPaginationDto;
-    return this.orderClient.send('findAllOrders', orderPaginationDto);
+    return this.client.send('findAllOrders', orderPaginationDto);
   }
 
   @Get('id/:id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     try {
       const order = await firstValueFrom(
-        this.orderClient.send('findOneOrder', { id }),
+        this.client.send('findOneOrder', { id }),
       );
       return order;
     } catch (error) {
@@ -52,7 +52,7 @@ export class OrdersController {
   ) {
     try {
       const order = await firstValueFrom(
-        this.orderClient.send('findAllOrders', {
+        this.client.send('findAllOrders', {
           ...paginationDto,
           status: statusDto.status,
         }),
@@ -70,7 +70,7 @@ export class OrdersController {
   ) {
     try {
       const order = await firstValueFrom(
-        this.orderClient.send('changeOrderStatus', {
+        this.client.send('changeOrderStatus', {
           id,
           status: statusDto.status,
         }),
